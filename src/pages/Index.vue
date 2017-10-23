@@ -5,26 +5,67 @@
     <div class="col-md-12 buttons">
       <button type="button" name="button" @click="putOnDb" class="btn btn-primary">Put</button>
       <button type="button" name="button" @click="show" class="btn btn-primary">Show</button>
+      <button type="button" name="button" @click="remove" class="btn btn-danger">Remove</button>
     </div>
   </div>
-
+<h2>Messages</h2>
   <div class="row">
-    <div class="col-md-8 db">
-      <h2>Messages</h2>
-      <table class="table table-bordered table-dark">
+    <div class="col-md-3 db">
+      <h3>HE</h3>
+      <table class="table table-bordered table-dark msg-table">
       <thead>
         <tr>
-          <th>HE</th>
-          <th>EN</th>
-          <th>SP</th>
+          <th>recordID</th>
+          <th>msgid</th>
+          <th>msg</th>
         </tr>
       </thead>
-      <tbody v-for="item in data">
+      <tbody v-for="item in data.he">
         <tr>
-          <td></td>
-          <td>$100</td>
+          <td>{{item.recordID}}</td>
+          <td>{{item.msgid}}</td>
+          <td>{{item.msg}}</td>
         </tr>
       </tbody>
+    </table>
+  </div>
+    <div class="col-md-3 db">
+    <h3>EN</h3>
+    <table class="table table-bordered table-dark msg-table">
+    <thead>
+      <tr>
+        <th>recordID</th>
+        <th>msgid</th>
+        <th>msg</th>
+      </tr>
+    </thead>
+    <tbody v-for="item in data.en">
+      <tr>
+        <td>{{item.recordID}}</td>
+        <td>{{item.msgid}}</td>
+        <td>{{item.msg}}</td>
+      </tr>
+    </tbody>
+    </table>
+  </div>
+
+    <div class="col-md-3 db">
+    <h3>SP</h3>
+    <table class="table table-bordered table-dark msg-table">
+    <thead>
+      <tr>
+        <th>recordID</th>
+        <th>msgid</th>
+        <th>msg</th>
+      </tr>
+    </thead>
+    <tbody v-for="item in data.sp">
+      <tr>
+        <td>{{item.recordID}}</td>
+        <td>{{item.msgid}}</td>
+        <td>{{item.msg}}</td>
+      </tr>
+    </tbody>
     </table>
     </div>
   </div>
@@ -41,74 +82,83 @@ export default {
   name: 'app',
 
   created() {
-    console.log(db);
+    this.show();
   },
 
   data() {
     return {
-      data: '',
+      data: {
+        en: [],
+        he: [],
+        sp: [],
+        doc: {},
+        dataSet: false,
+      },
     };
   },
 
   methods: {
 
     putOnDb() {
-      const messages = { data: [
-        {
-          recordID: 1,
-          Language: 'he',
-          msgid: '1',
-          msg: 'lo',
-        },
-        {
-          recordID: 2,
-          Language: 'he',
-          msgid: '2',
-          msg: 'mevin',
-        },
-        {
-          recordID: 3,
-          Language: 'he',
-          msgid: '3',
-          msg: 'klum',
-        },
-        {
-          recordID: 4,
-          Language: 'en',
-          msgid: '1',
-          msg: 'dont',
-        },
-        {
-          recordID: 5,
-          Language: 'en',
-          msgid: '2',
-          msg: 'undersant',
-        },
-        {
-          recordID: 6,
-          Language: 'en',
-          msgid: '3',
-          msg: 'anything',
-        },
-        {
-          recordID: 7,
-          Language: 'sp',
-          msgid: '1',
-          msg: 'no',
-        },
-        {
-          recordID: 8,
-          Language: 'sp',
-          msgid: '2',
-          msg: 'entende',
-        },
-        {
-          recordID: 9,
-          Language: 'sp',
-          msgid: '3',
-          msg: 'nada',
-        },
-      ] };
+      if (this.data.dataSet) {
+        return;
+      }
+
+      const messages = { lang: {
+        he: [
+          {
+            recordID: 1,
+            msgid: '1',
+            msg: 'lo',
+          },
+          {
+            recordID: 2,
+            msgid: '2',
+            msg: 'mevin',
+          },
+          {
+            recordID: 3,
+            msgid: '3',
+            msg: 'klum',
+          },
+        ],
+
+        en: [
+          {
+            recordID: 4,
+            msgid: '1',
+            msg: 'dont',
+          },
+          {
+            recordID: 5,
+            msgid: '2',
+            msg: 'undersant',
+          },
+          {
+            recordID: 6,
+            msgid: '3',
+            msg: 'anything',
+          },
+        ],
+
+        sp: [
+          {
+            recordID: 7,
+            msgid: '1',
+            msg: 'no',
+          },
+          {
+            recordID: 8,
+            msgid: '2',
+            msg: 'entende',
+          },
+          {
+            recordID: 9,
+            msgid: '3',
+            msg: 'nada',
+          },
+        ],
+      } };
       // const locations = [
       //   {
       //     recordID: 1,
@@ -165,22 +215,38 @@ export default {
       //     msg: 'supermarket',
       //   },
       // ];
-      db.post(messages, (err, result) => {
-        console.log(err);
-        console.log(result);
+      db.post(messages, () => {
+        this.data.dataSet = true;
       });
       this.show();
     },
 
     show() {
       db.allDocs({ include_docs: true, descending: true }, (err, doc) => {
-        this.data = doc.rows;
+        if (doc.total_rows === 0) {
+          return;
+        }
+        this.data.he = doc.rows[0].doc.lang.he;
+        this.data.en = doc.rows[0].doc.lang.en;
+        this.data.sp = doc.rows[0].doc.lang.sp;
+        this.data.doc = doc.rows[0];
+        this.data.dataSet = true;
       });
     },
 
-    remove(item) {
-      console.log(item);
-      db.remove(item);
+    remove() {
+      if (!this.data.dataSet) {
+        return;
+      }
+      db.get(this.data.doc.id).then(doc => db.remove(doc)).then(() => {
+        this.data = {
+          en: [],
+          he: [],
+          sp: [],
+          doc: {},
+        };
+        this.data.dataSet = false;
+      });
     },
 
   },
@@ -191,4 +257,5 @@ export default {
 .buttons {
   margin-bottom: 10px;
 }
+
 </style>
